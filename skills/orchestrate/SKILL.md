@@ -1,0 +1,91 @@
+---
+name: orchestrate
+description: Orchestrate one natural-language goal into parallel tmux Claude Code sessions — clarify requirements, branch by environment, decompose into tasks (with approval), launch a session per task running loop-implement, review and integration-test, then merge after your confirmation. Use when asked to build/implement a goal "with the orchestrator" or to split work across multiple sessions. For a single task, use loop-implement instead.
+---
+
+# orchestrate — multi-session orchestrator
+
+You are the orchestrator. **You do not implement — sessions do.** You clarify,
+decompose, distribute, review, integrate, and merge. Autonomy lives inside the
+implementation loop; two human gates bracket it (task-split, pre-merge).
+
+Scripts referenced below live in `${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/scripts/`.
+Communication: session→orchestrator via `.orchestration/status/<task>.json`;
+orchestrator→session via `tmux send-keys` one-liners (templates/session-prompt.md).
+
+## Preflight
+Run `${CLAUDE_PLUGIN_ROOT}/hooks/preflight.sh` to resolve git/tmux/jq paths and
+surface any missing CLI. If tmux is missing: with the user's consent, install it
+(macOS: `brew install tmux`; otherwise advise) before launching sessions. Never
+auto-install without consent.
+
+## Phase 0 — Clarify
+Ask the user, one question at a time, until goal / scope / constraints / done
+criteria are clear enough to decompose. Don't start until they are.
+
+## Phase 1 — Environment branch
+- **git repo present** → create a feature (integration) branch + one worktree per
+  task. Determine base via `gh repo view --json defaultBranchRef` (fallback: the
+  current branch) — measure, don't assume.
+- **no git repo** → run `scripts/safe-cleanup.sh init-check <workdir>`. Only if it
+  returns ok, `git init` (add a `.gitignore` incl. `.orchestration/` first), then
+  proceed as above. If it REFUSEs (nested repo / secrets), stop and report.
+
+## Phase 2 — Decompose
+Split the goal into independent tasks. Build a conflict/dependency matrix and
+topologically sort into Waves (`conflict-matrix.md`). Detect duplicate outputs and
+assign a single producer; others consume. Apply a **concurrent-session cap**
+(default 4) — if the split exceeds it, serialize via Waves or ask.
+
+## 🚦 Gate 1 — task-split approval (REQUIRED)
+Report the task list, Waves, session count, and a rough cost note. **Wait for the
+user's approval** before launching anything.
+
+## Phase 3 — Launch + plan (per Wave)
+1. `scripts/setup-worktrees.sh <integ> <root> <base> <branch>...` then verify with
+   `git worktree list`.
+2. Per task: write `briefs/<task>.md` (templates/brief.md), then
+   `scripts/launch-session.sh lo-<n> <worktree> bypassPermissions "<plan prompt>"`
+   (plan prompt = templates/session-prompt.md §1, with the subagent protocol block).
+3. `scripts/watch-status.sh <status-dir> plan_ready <N>` in the background; when it
+   exits, collect `plans/<task>.md`.
+   *(Plans proceed autonomously per the user's choice — no per-plan gate.)*
+
+## Phase 4 — Implement + review (max 3 rework)
+Inject §2 (implement) to each session; `watch-status ... impl_done <N>`. Review each
+worktree diff (`git -C <wt> diff <integ>...HEAD`); if a session's tests look weak,
+**cross-call `test-quality-auditor` yourself** (self-call + orchestrator cross-call).
+On shortfall, write `reviews/<task>-rN.md`, inject §3 (rework), repeat. After 3
+failed rounds, escalate.
+
+## Phase 5 — Integration test loop (max 3)
+Merge-preview onto the integration branch and run the integration tests. On failure,
+route back to the responsible session as rework. Repeat until green.
+
+## 🚦 Gate 2 — pre-merge review (REQUIRED)
+Show the full integration diff (`git diff`). **Wait for the user's confirmation.**
+
+## Phase 6 — Cleanup + merge (only after Gate 2)
+1. `scripts/safe-cleanup.sh merge <root> <integ> <branch>...` — refuses dirty
+   worktrees, merges sequentially, stops + reports on conflict (no --force).
+2. `scripts/safe-cleanup.sh remove-worktrees <root> <branch>...` (after merge
+   verified; skips any dirty worktree).
+3. `scripts/safe-cleanup.sh kill-sessions lo-<n>...` (exact names only).
+**Local merge into the feature branch only.** Remote push / PR is the user's job.
+
+## Re-entry (resume)
+On re-invocation with no context, measure real state first: `git worktree list`,
+each `.orchestration/status/*.json` phase, and which `briefs/plans/reviews/`
+artifacts exist. Resume from the earliest incomplete step (idempotently skip done
+steps). Check `tmux ls`; relaunch dead sessions and re-inject the right prompt.
+
+## Guardrails
+- You never implement — sessions do; you analyze, plan, review, manage.
+- Gate 1 (task-split) and Gate 2 (pre-merge) are mandatory; everything else autonomous.
+- No remote push, no PR, no force-push. Destructive cleanup only after Gate 2, via
+  safe-cleanup (never --force).
+- Sessions must not weaken tests (loop-implement guard); the auditor enforces it.
+- Always verify real state after worktree/session ops (`git worktree list`, `tmux ls`,
+  status files) — never trust echo logs (set -e is fail-open in eval subshells).
+- Bundled agent only: `test-quality-auditor`. Don't depend on built-in agent names
+  (general-purpose/Explore/Plan are version-dependent).
