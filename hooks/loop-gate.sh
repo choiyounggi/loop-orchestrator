@@ -22,10 +22,15 @@ else
   CWD="$PWD"; ACTIVE="false"
 fi
 [ -z "$CWD" ] && CWD="$PWD"
+# Normalize to a physical path so /private, symlinks, and /var->/private/var
+# differences don't break the worktree match (macOS).
+CWD=$(cd "$CWD" 2>/dev/null && pwd -P || printf '%s' "$CWD")
 
 # Already re-entered after a previous block → never loop forever.
 [ "$ACTIVE" = "true" ] && exit 0
-# Without jq we cannot read status JSON → fail open (preflight ensures jq).
+# Without jq we cannot read status JSON. jq is required for the whole
+# orchestration (status-update needs it too), so a jq-less env can't run a
+# managed session anyway → this no-op is harmless.
 [ -z "$JQ" ] && exit 0
 
 # Locate .orchestration/status by walking up from the session cwd.
@@ -44,11 +49,13 @@ for f in "$statusdir"/*.json; do
   [ -e "$f" ] || continue
   wt=$("$JQ" -r '.worktree // empty' "$f" 2>/dev/null)
   ph=$("$JQ" -r '.phase // empty' "$f" 2>/dev/null)
+  [ -n "$wt" ] && wt=$(cd "$wt" 2>/dev/null && pwd -P || printf '%s' "$wt")
   [ "$wt" = "$CWD" ] || continue
   case "$ph" in
     done|approved|merged|failed|"") : ;;   # terminal/unknown — allow stop
     *) incomplete_phase="$ph" ;;
   esac
+  break   # one status entry per worktree; stop at the matched one
 done
 
 if [ -n "$incomplete_phase" ]; then

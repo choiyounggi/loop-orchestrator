@@ -18,6 +18,13 @@ TMUX=$(command -v tmux) || { echo "launch-session: tmux not found" >&2; exit 127
 [ $# -eq 4 ] || { echo "usage: launch-session.sh <session> <worktree> <perm> <prompt>" >&2; exit 1; }
 session="$1"; wt="$2"; perm="$3"; prompt="$4"
 
+# whitelist the permission mode — it is interpolated into a shell command sent to
+# the pane, so reject anything unexpected (injection guard).
+case "$perm" in
+  bypassPermissions|acceptEdits|plan|default) : ;;
+  *) echo "launch-session: invalid permission mode '$perm'" >&2; exit 2 ;;
+esac
+
 # locate the claude binary (avoid nvm lazy wrappers / shell functions)
 CLAUDE=""
 for c in "$HOME"/.nvm/versions/node/*/bin/claude /opt/homebrew/bin/claude /usr/local/bin/claude "$HOME"/.local/bin/claude; do
@@ -47,7 +54,7 @@ while [ $i -lt 30 ]; do
       ready=1; break ;;
     *"Yes, I accept"*|*"accept all responsibility"*)
       "$TMUX" send-keys -t "$session" Down; sleep 1; "$TMUX" send-keys -t "$session" Enter ;;
-    *"Do you trust"*|*"trust the files"*|*"Enter to confirm"*|*"to select"*|*"trust"*|*"Trust"*|*"Do you"*)
+    *"Do you trust"*|*"trust the files"*|*"Enter to confirm"*)
       "$TMUX" send-keys -t "$session" Enter ;;
   esac
   i=$((i+1))

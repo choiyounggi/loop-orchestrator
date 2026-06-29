@@ -19,10 +19,18 @@ file="$dir/$task.json"
 [ -f "$file" ] || printf '{"task":"%s"}' "$task" > "$file"
 
 now=$(date -u +%Y-%m-%dT%H:%M:%SZ)   # cross-platform (GNU/BSD) iso-8601 UTC
+wt=$(pwd -P)                          # physical path so loop-gate can match it
 tmp="$file.tmp.$$"
-"$JQ" --arg p "$phase" --arg t "$now" '.phase=$p | .updatedAt=$t' "$file" > "$tmp" && mv "$tmp" "$file"
+trap 'rm -f "$tmp"' EXIT
+# phase + timestamp + worktree in one atomic write
+"$JQ" --arg p "$phase" --arg t "$now" --arg w "$wt" \
+  '.phase=$p | .updatedAt=$t | .worktree=$w' "$file" > "$tmp" && mv "$tmp" "$file"
 
 for kv in "$@"; do
+  case "$kv" in
+    *=*) : ;;
+    *) echo "status-update: ignoring malformed extra '$kv' (expected key=value)" >&2; continue ;;
+  esac
   k=${kv%%=*}; v=${kv#*=}
   "$JQ" --arg k "$k" --arg v "$v" '.[$k]=$v' "$file" > "$tmp" && mv "$tmp" "$file"
 done

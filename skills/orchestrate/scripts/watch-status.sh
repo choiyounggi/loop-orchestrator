@@ -16,6 +16,10 @@ dir="$1"; target="$2"; expected="$3"; timeout="${4:-3600}"; interval="${5:-15}"
 order="pending planning plan_ready implementing impl_done approved merged done"
 rank() { i=0; for p in $order; do [ "$p" = "$1" ] && { echo "$i"; return; }; i=$((i+1)); done; echo -1; }
 target_rank=$(rank "$target")
+# Guard: an unknown/typo'd target phase yields rank -1, which every phase would
+# satisfy (r >= -1) → instant false "all done". Refuse it.
+if [ "$target_rank" -lt 0 ]; then echo "watch-status: unknown target phase '$target'" >&2; exit 4; fi
+[ -d "$dir" ] || { echo "watch-status: status dir '$dir' does not exist" >&2; exit 4; }
 
 elapsed=0
 while [ "$elapsed" -lt "$timeout" ]; do

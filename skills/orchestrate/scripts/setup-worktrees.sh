@@ -16,7 +16,9 @@ GIT=$(command -v git) || { echo "setup-worktrees: git not found" >&2; exit 127; 
 integ="$1"; root="$2"; base="$3"; shift 3
 
 cd "$root"
-"$GIT" fetch origin --quiet 2>/dev/null || echo "setup-worktrees: fetch failed — proceeding with local refs" >&2
+if ! "$GIT" fetch origin --quiet 2>/dev/null; then
+  echo "setup-worktrees: fetch failed — using local refs; if base '$base' is a remote-tracking ref it may be stale" >&2
+fi
 
 # 1) integration branch (branch only; keep the main worktree's current branch)
 if "$GIT" show-ref --verify --quiet "refs/heads/$integ"; then
@@ -32,7 +34,11 @@ for br in "$@"; do
   path="$root/.worktrees/$safe"
   if "$GIT" show-ref --verify --quiet "refs/heads/$br"; then
     [ -d "$path" ] || "$GIT" worktree add "$path" "$br"
-    echo "-> $br exists — worktree ensured"
+    if "$GIT" merge-base --is-ancestor "$integ" "$br" 2>/dev/null; then
+      echo "-> $br exists — worktree ensured"
+    else
+      echo "-> $br exists but is NOT based on $integ (possibly stale from a previous run) — verify before relying on it" >&2
+    fi
   else
     "$GIT" worktree add -b "$br" "$path" "$integ"
     echo "ok: worktree $path ($br)"

@@ -15,9 +15,11 @@ orchestrator→session via `tmux send-keys` one-liners (templates/session-prompt
 
 ## Preflight
 Run `${CLAUDE_PLUGIN_ROOT}/hooks/preflight.sh` to resolve git/tmux/jq paths and
-surface any missing CLI. If tmux is missing: with the user's consent, install it
-(macOS: `brew install tmux`; otherwise advise) before launching sessions. Never
-auto-install without consent.
+surface any missing CLI. **git, tmux, and jq are all required** — if any is
+missing, stop and ask the user to install it (the SessionStart preflight hook is
+advisory only; this skill must hard-require them). For a missing tmux: with the
+user's consent, install it (macOS: `brew install tmux`; otherwise advise) before
+launching sessions. Never auto-install without consent.
 
 ## Phase 0 — Clarify
 Ask the user, one question at a time, until goal / scope / constraints / done

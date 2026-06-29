@@ -28,8 +28,9 @@ init_check() {
     echo "init-check: REFUSE — '$wd' is inside an existing git repo ($top); git init would nest." >&2
     return 1
   fi
-  if find "$wd" -maxdepth 2 \( -name '.env*' -o -name '*.pem' -o -iname '*credential*' \) 2>/dev/null | grep -q .; then
-    echo "init-check: REFUSE — secret-like files present (.env*/*.pem/*credential*). Add them to .gitignore before init." >&2
+  # best-effort secret scan (not exhaustive — deeper or oddly-named secrets may pass)
+  if find "$wd" -maxdepth 4 \( -name '.env' -o -name '.env.*' -o -name '*.pem' -o -iname '*credential*' \) 2>/dev/null | grep -q .; then
+    echo "init-check: REFUSE — secret-like files present (.env / .env.* / *.pem / *credential*). Add them to .gitignore before init." >&2
     return 1
   fi
   [ -f "$wd/.gitignore" ] || echo "init-check: WARN — no .gitignore; add ignores (node_modules, .env*, build, .orchestration/) before committing." >&2
@@ -75,7 +76,11 @@ remove_worktrees() {
       echo "remove-worktrees: SKIP — uncommitted changes in $wt (never --force)." >&2
       continue
     fi
-    "$GIT" -C "$root" worktree remove "$wt" && echo "removed: $wt"
+    if "$GIT" -C "$root" worktree remove "$wt"; then
+      echo "removed: $wt"
+    else
+      echo "remove-worktrees: FAILED to remove $wt (locked/prunable?) — left in place" >&2
+    fi
   done
   return 0
 }

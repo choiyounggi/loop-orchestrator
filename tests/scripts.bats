@@ -34,3 +34,23 @@ setup() {
   run bash "$WS" "$STATUS_DIR" impl_done 1 5 1
   [ "$status" -eq 3 ]
 }
+
+@test "watch-status: exit 4 on unknown target phase (no false 'all done')" {
+  mkdir -p "$STATUS_DIR"
+  printf '{"task":"a","phase":"done"}' > "$STATUS_DIR/a.json"
+  run bash "$WS" "$STATUS_DIR" bogusphase 1 2 1
+  [ "$status" -eq 4 ]
+}
+
+@test "watch-status: exit 4 when status dir is missing" {
+  run bash "$WS" "${BATS_TEST_TMPDIR}/does-not-exist" done 1 2 1
+  [ "$status" -eq 4 ]
+}
+
+@test "status-update: ignores malformed extra and records worktree" {
+  run bash "$SU" task-x implementing notakeyvalue good=1
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.good' "$STATUS_DIR/task-x.json")" = "1" ]
+  [ "$(jq -r 'has("notakeyvalue")' "$STATUS_DIR/task-x.json")" = "false" ]
+  [ "$(jq -r '.worktree | type' "$STATUS_DIR/task-x.json")" = "string" ]
+}
