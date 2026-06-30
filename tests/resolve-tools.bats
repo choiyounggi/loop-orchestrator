@@ -51,9 +51,18 @@ setup() {
 
 @test "invalid config layer fails open to lower layers (no crash)" {
   printf 'not json at all' > "$HOME_CFG"
-  run bash "$RT" --role knowledge
+  # stdout must stay pure JSON; the "invalid config" warning goes to stderr
+  # (drop it so jq parses only the resolved object).
+  run bash -c "bash '$RT' --role knowledge 2>/dev/null"
   [ "$status" -eq 0 ]
   [ "$(printf '%s' "$output" | jq -r '.kind')" = "default" ]
+}
+
+@test "invalid config: warning goes to stderr, not stdout" {
+  printf 'not json at all' > "$HOME_CFG"
+  run bash -c "bash '$RT' --role knowledge 2>/dev/null"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"ignoring invalid config"* ]]
 }
 
 @test "unknown arg errors" {
