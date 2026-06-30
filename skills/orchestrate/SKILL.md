@@ -18,7 +18,7 @@ Resolve the pluggable tool profile once up front:
 `sh ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-tools.sh --summary`. It maps capability
 roles — `intake` (issue-tracker work-list source), `knowledge` (domain/policy),
 `tacit` (incidents/danger zones), `plan` (planning skill), `verify` (test/build/QA
-command), `explore` (code search) — to
+command), `explore` (code search), `design` (visual/UI spec, e.g. Figma) — to
 whatever tools this installation has, or to generic defaults when unset (optional,
 layered per-user then per-repo; see `references/tool-profile.md`). Use
 `knowledge`/`tacit` yourself during Clarify/Decompose, and write each task's
@@ -81,6 +81,13 @@ producer; others consume (add a dependency edge). Apply a **concurrent-session c
 (default 4) — if a Wave exceeds it, split it or ask. Tasks in the same Wave are
 independent (parallel); a later Wave starts only after the previous Wave is approved.
 
+**Visual spec (`design` role).** While extracting the above, flag each task that is
+UI-facing *and* whose source issue references a design (e.g. a Figma link). If the
+`design` role is configured, pull that task's spec with it (don't guess from the
+link) and carry it into the brief's `<design_spec>` (Phase 3 step 2). Backend-only
+tasks, or any task with no design reference, skip this. With `design` unset, ignore
+design links entirely — the original behavior.
+
 ## 🚦 Gate 1 — task-split approval (REQUIRED)
 Report the task list, Waves, session count, and a rough cost note. **Wait for the
 user's approval** before launching anything.
@@ -100,7 +107,8 @@ Single-Wave splits run everyone in parallel (the original behavior).
    `git worktree list`.
 2. Per task: write `briefs/<task>.md` (templates/brief.md) — fill `<tools_guidance>`
    from the resolved tool profile so the session uses the right knowledge/tacit/plan
-   tools — then
+   tools, and for a UI-facing task fill `<design_spec>` with the `design` role's
+   pulled spec (Phase 2) — then
    `scripts/launch-session.sh lo-<n> <worktree> bypassPermissions "<plan prompt>"`
    (plan prompt = templates/session-prompt.md §1, with the subagent protocol block).
 3. `scripts/watch-status.sh <status-dir> plan_ready <N>` in the background; when it

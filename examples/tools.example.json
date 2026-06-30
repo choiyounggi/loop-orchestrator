@@ -33,5 +33,11 @@
     "ref": "rtb-sourcecode",
     "how": "find-references / read-definition for external repos and symbols",
     "when": "step 1 — locating code, symbols, call sites (read-only)"
+  },
+  "design": {
+    "kind": "mcp",
+    "ref": "rtb-figma",
+    "how": "get_spec_links -> inspect_node / get_dev_ready / get_design_tokens",
+    "when": "issue has a Figma link AND the change touches UI; skip for backend-only tasks"
   }
 }

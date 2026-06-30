@@ -16,9 +16,27 @@ the generic built-in behavior. Nothing breaks when nothing is configured.
 | `plan`      | producing a non-trivial implementation plan       | loop-implement step 2 (Plan); orchestrate decomposition |
 | `verify`    | running the project's tests / build / QA checks   | loop-implement step 5 (Run); orchestrate Phase 5 (integration) |
 | `explore`   | locating code, symbols, call sites (read-only)    | loop-implement step 1 (Analyze) |
+| `design`    | visual/UI spec for FE/UI tasks (e.g. a Figma link in the issue) | orchestrate Phase 0/2 + brief; loop-implement step 1 (Analyze) |
 
 Roles are optional and extensible — you may add custom keys; the resolver passes
 them through, and a skill uses a role only if it knows that role by name.
+
+### `design` — the visual-spec source (optional)
+
+When `design` is configured and a task is UI-facing — the issue references a
+design (e.g. a Figma link) and the change touches the UI — orchestrate pulls the
+referenced spec while building the task brief and writes it into the brief's
+`<design_spec>` tag, so the worker session implements against the real visual
+contract instead of guessing. `loop-implement` consults the same role in step 1
+(Analyze / spec-conformance) when run standalone. With `design` unset, neither
+skill looks for a visual spec — the original behavior. Backend-only or non-UI
+tasks skip it even when configured. Example mapping to a Figma MCP:
+
+```json
+{ "design": { "kind": "mcp", "ref": "rtb-figma",
+              "how": "get_spec_links -> inspect_node / get_dev_ready / get_design_tokens",
+              "when": "issue has a Figma link AND the change touches UI; skip for backend-only tasks" } }
+```
 
 ### `intake` — the issue-tracker entry (optional)
 
