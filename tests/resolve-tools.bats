@@ -1,0 +1,61 @@
+#!/usr/bin/env bats
+# Tests for resolve-tools.sh — layered tool-profile resolution.
+
+setup() {
+  RT="${BATS_TEST_DIRNAME}/../scripts/resolve-tools.sh"
+  HOME_CFG="${BATS_TEST_TMPDIR}/home.json"
+  PROJ_CFG="${BATS_TEST_TMPDIR}/proj.json"
+  # point both layers at the tmpdir; create per-test as needed
+  export LOOP_ORCH_CONFIG_HOME="$HOME_CFG"
+  export LOOP_ORCH_CONFIG_PROJECT="$PROJ_CFG"
+}
+
+@test "no config: every role resolves to default" {
+  run bash "$RT" --json
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s' "$output" | jq -r '.knowledge.kind')" = "default" ]
+  [ "$(printf '%s' "$output" | jq -r '.tacit.kind')"     = "default" ]
+  [ "$(printf '%s' "$output" | jq -r '.plan.kind')"      = "default" ]
+}
+
+@test "home config: a configured role is used" {
+  printf '{"knowledge":{"kind":"mcp","ref":"wiki-rag"}}' > "$HOME_CFG"
+  run bash "$RT" --role knowledge
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s' "$output" | jq -r '.ref')" = "wiki-rag" ]
+}
+
+@test "project overrides home per role" {
+  printf '{"plan":{"kind":"skill","ref":"home:Plan"}}'   > "$HOME_CFG"
+  printf '{"plan":{"kind":"skill","ref":"rtb:plan"}}'    > "$PROJ_CFG"
+  run bash "$RT" --role plan
+  [ "$(printf '%s' "$output" | jq -r '.ref')" = "rtb:plan" ]
+}
+
+@test "merge is field-wise: project keeps home fields it does not set" {
+  printf '{"knowledge":{"kind":"mcp","ref":"wiki-rag","how":"wiki_search"}}' > "$HOME_CFG"
+  printf '{"knowledge":{"how":"wiki_query_context"}}'                        > "$PROJ_CFG"
+  run bash "$RT" --role knowledge
+  [ "$(printf '%s' "$output" | jq -r '.ref')" = "wiki-rag" ]            # inherited
+  [ "$(printf '%s' "$output" | jq -r '.how')" = "wiki_query_context" ] # overridden
+}
+
+@test "invalid config layer fails open to lower layers (no crash)" {
+  printf 'not json at all' > "$HOME_CFG"
+  run bash "$RT" --role knowledge
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s' "$output" | jq -r '.kind')" = "default" ]
+}
+
+@test "unknown arg errors" {
+  run bash "$RT" --bogus
+  [ "$status" -ne 0 ]
+}
+
+@test "summary prints one line per role with assertions" {
+  printf '{"tacit":{"kind":"mcp","ref":"rtb-lore"}}' > "$PROJ_CFG"
+  run bash "$RT" --summary
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "tacit: mcp rtb-lore"
+  echo "$output" | grep -q "knowledge: default"
+}

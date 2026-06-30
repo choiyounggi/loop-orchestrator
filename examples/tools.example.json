@@ -1,0 +1,19 @@
+{
+  "knowledge": {
+    "kind": "mcp",
+    "ref": "wiki-rag",
+    "how": "wiki_search -> wiki_get_document -> wiki_query_context",
+    "when": "domain terms, business policy, code/status values — verify before assuming"
+  },
+  "tacit": {
+    "kind": "mcp",
+    "ref": "rtb-lore",
+    "how": "lore_query, lore_list_danger_zones, lore_get_incident",
+    "when": "edge cases, past incidents, coupling/danger zones for the area being changed"
+  },
+  "plan": {
+    "kind": "skill",
+    "ref": "rtb:plan",
+    "when": "non-trivial multi-file/multi-module plan (otherwise use the built-in step-2 planning)"
+  }
+}

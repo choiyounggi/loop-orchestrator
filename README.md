@@ -62,6 +62,38 @@ Claude Code 대화에서 자연어로 요청하세요:
 - **git init 선검사**: 상위 저장소 안(중첩)·시크릿 파일(`.env`/`*.pem`/`*credential*`) 감지 시 거부
 - **검증 게이밍 방지**: 코드를 작성한 세션이 자기 테스트 품질을 자가판정하지 않도록 별도 읽기전용 에이전트가 판정
 
+## 도구 프로파일 (각자 환경의 도구 꽂기)
+
+플러그인은 기본적으로 **특정 도구에 의존하지 않습니다**(번들된 `test-quality-auditor` 외엔 외부 MCP/스킬/에이전트 무의존). 설치한 사람이 자기 환경의 도구를 몇 개의 **능력 역할(capability role)** 에 꽂으면 검증 루프가 그걸 사용하고, 안 꽂으면 제네릭 기본 동작으로 갑니다 — **설정이 없어도 그대로 동작합니다.**
+
+| 역할 | 용도 | 안 꽂으면 (기본) |
+|------|------|------------------|
+| `knowledge` | 도메인 사실·정책·코드값 | 일반 분석 (강제 조회 없음) |
+| `tacit` | 과거 사고·엣지케이스·danger zone | skip |
+| `plan` | 비단순 작업 계획 수립 | loop-implement 내장 step 2 |
+
+설정 파일은 `git config`처럼 **레이어드**로 합쳐집니다 (낮은 → 높은 우선순위):
+
+```
+내장 기본값  <  ~/.claude/loop-orchestrator/tools.json  <  <repo>/.loop-orchestrator/tools.json
+```
+
+- **per-user** (`~/.claude/...`) — 내 머신의 도구, 모든 프로젝트에 적용
+- **per-repo** (`<repo>/.loop-orchestrator/tools.json`) — 커밋해서 팀 공통 매핑 공유, per-user보다 우선
+- 병합은 **역할·필드 단위** — per-repo가 한 역할(또는 한 필드)만 덮고 나머진 상속
+
+예시(`examples/tools.example.json` — wiki-rag / rtb-lore / rtb:plan):
+
+```jsonc
+{
+  "knowledge": { "kind": "mcp",   "ref": "wiki-rag", "how": "wiki_search -> wiki_get_document", "when": "도메인 용어·정책·코드값" },
+  "tacit":     { "kind": "mcp",   "ref": "rtb-lore", "how": "lore_query, lore_list_danger_zones", "when": "엣지케이스·과거 사고·danger zone" },
+  "plan":      { "kind": "skill", "ref": "rtb:plan", "when": "비단순 다파일 계획" }
+}
+```
+
+스키마·우선순위·해석 상세: [`references/tool-profile.md`](references/tool-profile.md). 역할은 선택·확장 가능하며, 스킬은 자기가 아는 역할만 사용합니다.
+
 ## 구성요소
 
 | 종류 | 이름 | 역할 |
@@ -69,6 +101,7 @@ Claude Code 대화에서 자연어로 요청하세요:
 | 스킬 | `orchestrate` | 분해·분배·검토·통합·병합 관리 (오케스트레이터) |
 | 스킬 | `loop-implement` | 단일 작업 검증 루프 (각 세션, 단독 사용도 가능) |
 | 에이전트 | `test-quality-auditor` | 테스트 품질 독립 검증 (읽기전용) |
+| 스크립트 | `scripts/resolve-tools.sh` | 도구 프로파일 레이어드 해석 (역할 → 도구/기본값) |
 | 훅 | `preflight` (SessionStart) | git/tmux/jq 탐지 + 안내 |
 | 훅 | `loop-gate` (Stop) | 검증 루프 미완 시 세션 종료 차단 |
 

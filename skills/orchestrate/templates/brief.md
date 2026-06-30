@@ -35,8 +35,10 @@ specific tags below as authority.
     </out_of_scope>
   </scope_boundaries>
 
-  <!-- which tools/sources to use; subagent usage is in the session prompt protocol -->
-  <tools_guidance>{e.g. docs/specs to read, how to explore; DB read-only if any}</tools_guidance>
+  <!-- which tools/sources to use; subagent usage is in the session prompt protocol.
+       fill the resolved tool-profile roles here (resolve-tools.sh) so the session
+       inherits them: knowledge=<tool|default>, tacit=<tool|default>, plan=<tool|default> -->
+  <tools_guidance>{e.g. docs/specs to read, how to explore; DB read-only if any; resolved roles — knowledge/tacit/plan}</tools_guidance>
 
   <constraints>{local rules; surgical changes only on shared files}</constraints>
 

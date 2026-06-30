@@ -13,6 +13,16 @@ Scripts referenced below live in `${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/scrip
 Communication: session→orchestrator via `.orchestration/status/<task>.json`;
 orchestrator→session via `tmux send-keys` one-liners (templates/session-prompt.md).
 
+## Tool profile
+Resolve the pluggable tool profile once up front:
+`sh ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-tools.sh --summary`. It maps capability
+roles — `knowledge` (domain/policy), `tacit` (incidents/danger zones), `plan`
+(planning skill) — to whatever tools this installation has, or to generic defaults
+when unset (optional, layered per-user then per-repo; see `references/tool-profile.md`).
+Use `knowledge`/`tacit` yourself during Clarify/Decompose, and write each task's
+resolved roles into its `<tools_guidance>` brief so worker sessions inherit them
+even if they can't re-read the config.
+
 ## Preflight
 Run `${CLAUDE_PLUGIN_ROOT}/hooks/preflight.sh` to resolve git/tmux/jq paths and
 surface any missing CLI. **git, tmux, and jq are all required** — if any is
@@ -46,7 +56,9 @@ user's approval** before launching anything.
 ## Phase 3 — Launch + plan (per Wave)
 1. `scripts/setup-worktrees.sh <integ> <root> <base> <branch>...` then verify with
    `git worktree list`.
-2. Per task: write `briefs/<task>.md` (templates/brief.md), then
+2. Per task: write `briefs/<task>.md` (templates/brief.md) — fill `<tools_guidance>`
+   from the resolved tool profile so the session uses the right knowledge/tacit/plan
+   tools — then
    `scripts/launch-session.sh lo-<n> <worktree> bypassPermissions "<plan prompt>"`
    (plan prompt = templates/session-prompt.md §1, with the subagent protocol block).
 3. `scripts/watch-status.sh <status-dir> plan_ready <N>` in the background; when it

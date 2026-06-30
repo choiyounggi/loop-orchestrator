@@ -14,13 +14,30 @@ complete it here. It also works standalone for a single task.
 - Use: logic changes, new features, bug fixes, behavior-changing refactors.
 - Skip: typos, config values, simple rename/import cleanup, one-line edits.
 
+## Tool profile (pluggable)
+A few steps can use environment-specific tools through named **capability roles**:
+`knowledge` (domain facts / policy / code values), `tacit` (past incidents, edge
+cases, danger zones), and `plan` (a planning skill). Resolve them once at the start:
+
+```
+sh ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-tools.sh --summary
+```
+
+For each role: if a tool is configured, use it where the loop references that role
+below; if it resolves to `default`, use the generic built-in behavior (your own
+analysis / the step-2 planning). Configuration is optional and layered (per-user
+then per-repo) — with nothing set, the loop runs fully generic and depends on no
+external tool. Schema, precedence, and examples: `references/tool-profile.md`.
+
 ## The loop
 
 ```
 0. Define done       — write the acceptance criteria + done checklist FIRST,
                         so the loop has an explicit pass/fail target.        [DoD/XP]
-1. Analyze           — understand the change; list the test scenarios it needs. [TDD step 1 / PDCA Plan]
-2. Plan / design     — for larger tasks only; fold into step 1 if small.       [PDCA Plan]
+1. Analyze           — understand the change; list the test scenarios it needs.
+                        Consult the `knowledge` + `tacit` roles if configured.   [TDD step 1 / PDCA Plan]
+2. Plan / design     — for larger tasks only; fold into step 1 if small.
+                        Use the `plan` role if configured, else plan inline.     [PDCA Plan]
 3. Write tests (Red) — write the failing test(s) BEFORE the code. The test is
                         the spec and the verification oracle. If test-first is
                         impractical (e.g. exploratory UI), fix the acceptance
@@ -28,7 +45,8 @@ complete it here. It also works standalone for a single task.
 4. Implement (Green) — minimal code to make the tests pass.                     [TDD Green / PDCA Do]
 5. Run tests (Check) — run new + existing tests; preserve failure output.       [PDCA Check / self-testing code]
 6. Self-review + refactor — clean up; check bugs, edge cases, resource leaks,
-                        input validation, unused code.                          [TDD Refactor / self-review / Self-Refine]
+                        input validation, unused code. Re-check against the
+                        `tacit` role's danger zones if configured.               [TDD Refactor / self-review / Self-Refine]
 6.5 Independent audit — REQUIRED: call the test-quality-auditor subagent with the
                         task brief, the diff, and the test paths. Do NOT grade
                         your own tests. (self-grading guard)
