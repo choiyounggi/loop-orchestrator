@@ -13,11 +13,19 @@ setup() {
 @test "no config: every role resolves to default" {
   run bash "$RT" --json
   [ "$status" -eq 0 ]
+  [ "$(printf '%s' "$output" | jq -r '.intake.kind')"    = "default" ]
   [ "$(printf '%s' "$output" | jq -r '.knowledge.kind')" = "default" ]
   [ "$(printf '%s' "$output" | jq -r '.tacit.kind')"     = "default" ]
   [ "$(printf '%s' "$output" | jq -r '.plan.kind')"      = "default" ]
   [ "$(printf '%s' "$output" | jq -r '.verify.kind')"    = "default" ]
   [ "$(printf '%s' "$output" | jq -r '.explore.kind')"   = "default" ]
+}
+
+@test "intake role is configurable (issue-tracker entry)" {
+  printf '{"intake":{"kind":"mcp","ref":"atlassian"}}' > "$PROJ_CFG"
+  run bash "$RT" --role intake
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s' "$output" | jq -r '.ref')" = "atlassian" ]
 }
 
 @test "verify role is configurable like the others" {

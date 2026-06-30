@@ -4,8 +4,8 @@
 #
 #   built-in defaults  <  ~/.claude/loop-orchestrator/tools.json  <  <repo>/.loop-orchestrator/tools.json
 #
-# Each capability role (knowledge / tacit / plan / verify / explore, plus any
-# custom role) is merged independently and field-wise, so a project file can
+# Each capability role (intake / knowledge / tacit / plan / verify / explore,
+# plus any custom role) is merged independently and field-wise, so a project file can
 # override one role — or just one field of a role — and inherit everything else.
 # To drop an inherited value, set that field to null.
 #
@@ -30,6 +30,7 @@ JQ=$(command -v jq) || { echo "resolve-tools: jq not found" >&2; exit 127; }
 # Built-in defaults: every role unset → kind "default" (use loop-implement's own
 # generic behavior). Keeps the plugin fully functional with zero config.
 DEFAULTS='{
+  "intake":    {"kind":"default","when":"work-list source — issue tracker (orchestrate); unset = decompose the natural-language goal directly"},
   "knowledge": {"kind":"default","when":"domain facts, policy, code/status values (step 1)"},
   "tacit":     {"kind":"default","when":"past incidents, edge cases, danger zones (step 1/6)"},
   "plan":      {"kind":"default","when":"planning a non-trivial task (step 2)"},
@@ -72,7 +73,7 @@ case "${1:-}" in
       to_entries[] |
       .key + ": " +
       (if (.value.kind // "default") == "default"
-        then "default (built-in loop-implement behavior)"
+        then "default (built-in behavior)"
         else (.value.kind | tostring) + " " + (.value.ref // "?")
              + (if .value.how then " — " + .value.how else "" end)
       end)

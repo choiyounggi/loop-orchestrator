@@ -10,6 +10,7 @@ the generic built-in behavior. Nothing breaks when nothing is configured.
 
 | Role        | Purpose                                          | Used by (step)                          |
 | ----------- | ------------------------------------------------ | --------------------------------------- |
+| `intake`    | work-list source — an issue tracker the parent/child issues come from | orchestrate Phase 0 (Intake) |
 | `knowledge` | domain facts, business policy, code/status values | loop-implement step 1 (Analyze); orchestrate Phase 0/2 |
 | `tacit`     | past incidents, edge cases, coupling/danger zones | loop-implement step 1 (Analyze) + step 6 (Self-review) |
 | `plan`      | producing a non-trivial implementation plan       | loop-implement step 2 (Plan); orchestrate decomposition |
@@ -18,6 +19,21 @@ the generic built-in behavior. Nothing breaks when nothing is configured.
 
 Roles are optional and extensible — you may add custom keys; the resolver passes
 them through, and a skill uses a role only if it knows that role by name.
+
+### `intake` — the issue-tracker entry (optional)
+
+When `intake` is configured and the user names a parent issue (key or URL),
+orchestrate Phase 0 reads that issue and its children: the parent supplies the
+overall goal/architecture, each child becomes a candidate task. With `intake` unset
+(or for a free-text goal), orchestrate decomposes the natural-language goal itself —
+the original behavior. So a Jira/GitHub/Linear shop plugs its tracker here; everyone
+else just states a goal. Example mapping to the Atlassian MCP:
+
+```json
+{ "intake": { "kind": "mcp", "ref": "atlassian",
+              "how": "getJiraIssue(parent) + searchJiraIssuesUsingJql('parent=<KEY>')",
+              "when": "user gives a parent issue key/URL; children become tasks" } }
+```
 
 ## A role is a tool, not a loop (the nesting guard)
 

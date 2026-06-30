@@ -18,9 +18,11 @@ specific tags below as authority.
     <surrounding_code>{affected files: reuse / extend / new}</surrounding_code>
   </context>
 
-  <!-- consume upstream outputs, never re-create them (avoid compounding errors) -->
+  <!-- consume upstream outputs, never re-create them (avoid compounding errors).
+       for a Wave 2+ task the orchestrator pastes the APPROVED preceding Wave's REAL
+       signatures here (Phase 3 step 0) — exact, not paraphrased; treat as a contract -->
   <dependencies>
-    <upstream task="{UPSTREAM}">consume only: `{exact signature}` (do not re-create)</upstream>
+    <upstream task="{UPSTREAM}">consume only: `{exact signature — verbatim from the approved upstream}` (do not re-create)</upstream>
     <i_produce>you own: `{output}` — expose a stable interface for others</i_produce>
   </dependencies>
 

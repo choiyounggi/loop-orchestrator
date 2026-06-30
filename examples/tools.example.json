@@ -1,4 +1,10 @@
 {
+  "intake": {
+    "kind": "mcp",
+    "ref": "atlassian",
+    "how": "getJiraIssue(parent) + searchJiraIssuesUsingJql('parent=<KEY>'); extract key from URL last segment",
+    "when": "user names a parent issue key/URL — its children become the candidate tasks (else: free-text goal)"
+  },
   "knowledge": {
     "kind": "mcp",
     "ref": "wiki-rag",
