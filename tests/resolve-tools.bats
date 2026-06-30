@@ -19,6 +19,20 @@ setup() {
   [ "$(printf '%s' "$output" | jq -r '.plan.kind')"      = "default" ]
   [ "$(printf '%s' "$output" | jq -r '.verify.kind')"    = "default" ]
   [ "$(printf '%s' "$output" | jq -r '.explore.kind')"   = "default" ]
+  [ "$(printf '%s' "$output" | jq -r '.design.kind')"    = "default" ]
+}
+
+@test "design role is configurable (visual-spec source)" {
+  printf '{"design":{"kind":"mcp","ref":"rtb-figma"}}' > "$PROJ_CFG"
+  run bash "$RT" --role design
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s' "$output" | jq -r '.ref')" = "rtb-figma" ]
+}
+
+@test "design role appears in summary (default when unset)" {
+  run bash "$RT" --summary
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "design: default"
 }
 
 @test "intake role is configurable (issue-tracker entry)" {

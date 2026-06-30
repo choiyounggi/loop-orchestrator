@@ -4,8 +4,8 @@
 #
 #   built-in defaults  <  ~/.claude/loop-orchestrator/tools.json  <  <repo>/.loop-orchestrator/tools.json
 #
-# Each capability role (intake / knowledge / tacit / plan / verify / explore,
-# plus any custom role) is merged independently and field-wise, so a project file can
+# Each capability role (intake / knowledge / tacit / plan / verify / explore /
+# design, plus any custom role) is merged independently and field-wise, so a project file can
 # override one role — or just one field of a role — and inherit everything else.
 # To drop an inherited value, set that field to null.
 #
@@ -35,7 +35,8 @@ DEFAULTS='{
   "tacit":     {"kind":"default","when":"past incidents, edge cases, danger zones (step 1/6)"},
   "plan":      {"kind":"default","when":"planning a non-trivial task (step 2)"},
   "verify":    {"kind":"default","when":"running tests / build / QA checks (step 5)"},
-  "explore":   {"kind":"default","when":"locating code, symbols, call sites (step 1)"}
+  "explore":   {"kind":"default","when":"locating code, symbols, call sites (step 1)"},
+  "design":    {"kind":"default","when":"visual/UI spec for FE/UI tasks, e.g. a Figma link in the issue — read the referenced design before implementing (orchestrate Phase 0/2; loop-implement step 1)"}
 }'
 
 home_cfg="${LOOP_ORCH_CONFIG_HOME:-$HOME/.claude/loop-orchestrator/tools.json}"

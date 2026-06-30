@@ -18,7 +18,8 @@ complete it here. It also works standalone for a single task.
 A few steps can use environment-specific tools through named **capability roles**:
 `knowledge` (domain facts / policy / code values), `tacit` (past incidents, edge
 cases, danger zones), `plan` (a planning skill), `verify` (the project's test /
-build / QA command), and `explore` (code/symbol search). Resolve them once at the start:
+build / QA command), `explore` (code/symbol search), and `design` (visual/UI spec
+for a UI task, e.g. a Figma link). Resolve them once at the start:
 
 ```
 sh ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-tools.sh --summary
@@ -42,7 +43,9 @@ is no `implement` role — step 4 below is the single owner of the implement cyc
                         so the loop has an explicit pass/fail target.        [DoD/XP]
 1. Analyze           — understand the change; list the test scenarios it needs.
                         Consult `knowledge` + `tacit` if configured; use `explore`
-                        to locate code/symbols.                                  [TDD step 1 / PDCA Plan]
+                        to locate code/symbols. For a UI-facing task, read the
+                        visual spec — the brief's `<design_spec>` if present, else
+                        consult `design` (e.g. a Figma link) — and implement to it. [TDD step 1 / PDCA Plan]
 2. Plan / design     — for larger tasks only; fold into step 1 if small.
                         Use the `plan` role if configured, else plan inline.     [PDCA Plan]
 3. Write tests (Red) — write the failing test(s) BEFORE the code. The test is

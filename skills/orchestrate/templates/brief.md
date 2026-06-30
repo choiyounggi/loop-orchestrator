@@ -16,6 +16,10 @@ specific tags below as authority.
     <architecture>{shared components / data flow the task must respect}</architecture>
     <this_task_role>{this task's role among the N tasks}</this_task_role>
     <surrounding_code>{affected files: reuse / extend / new}</surrounding_code>
+    <!-- UI-facing tasks only: the visual contract pulled via the `design` role
+         (e.g. Figma spec links / tokens / dev-ready state). Omit for backend-only
+         tasks or when no design role is configured. Implement against this, not the raw link. -->
+    <design_spec>{resolved visual spec for a UI task — source figma link + pulled spec/tokens; omit if N/A}</design_spec>
   </context>
 
   <!-- consume upstream outputs, never re-create them (avoid compounding errors).
