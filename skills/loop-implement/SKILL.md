@@ -68,6 +68,40 @@ is no `implement` role — step 4 below is the single owner of the implement cyc
                         and escalate with the last failure reason.              [Reflexion / bounded retry]
 ```
 
+## Depth that keeps the loop to one pass
+
+Most retry rounds are not bad luck — they are defects a deeper first pass would
+have caught. These five practices sharpen steps 0–2 and 6 so problems surface
+*now* instead of in a later retry (or in review). They need no external
+tooling — just plain search and discipline — so they hold even when every
+capability role resolves to `default`. (Trivial tasks skip this, per *Scale to
+size* below.)
+
+- **Pin the baseline (steps 0–1).** Fix the starting point: a clean
+  `git status` and a noted HEAD. Anchor every "change here" reference by
+  symbol/structure — "the `addChip()` body, before the push" — not by line
+  number. A one-commit drift silently invalidates every line anchor.
+- **Check spec conformance (step 1).** Before writing code, confirm the change
+  *intent* matches its spec — the types it touches, the existing tests, and the
+  stated requirement (use the `knowledge` role here if configured). Spec-vs-
+  implementation mismatch is the single most common reason the judge fails;
+  surface and resolve it before coding, not after.
+- **Sweep adjacent defects (step 1, re-checked in step 6).** When you find the
+  change site, treat it as the *first instance of a category*, not a lone fix.
+  Deliberately search the same file, sibling files in the same module, and the
+  consumers for the same pattern (defect clustering); the `explore` role helps
+  if configured. Fold the in-scope hits into this task; list the rest
+  explicitly as out-of-scope or follow-up. Skipping this is what makes a later
+  round surface "the one you missed."
+- **Attach evidence, not claims.** For each sweep, record the actual result —
+  the search you ran, the hit count, and the locations (state 0 hits
+  explicitly) — never just "checked." "Confirmed, 0 hits" and "didn't look"
+  must be distinguishable.
+- **Plan without judgment calls (step 2).** Write decisions as concrete values
+  or code, not vague directives. Replace "follow the existing pattern" /
+  "handle appropriately" / "etc." with the actual pattern quoted and the actual
+  branch written as if/else. The implementing pass should execute, not re-decide.
+
 ## Calling the auditor (step 6.5)
 
 Use the Agent tool to run the `test-quality-auditor` subagent. Pass it: the task
@@ -100,4 +134,6 @@ Fowler, Self-Testing Code); PDCA/PDSA (Shewhart/Deming); self-review and "improv
 the codebase" review bar (Google eng-practices); Definition of Done (Scrum Guide)
 + acceptance criteria (XP); self-verification loops (Self-Refine, Reflexion;
 Anthropic, *Building Effective Agents* evaluator-optimizer); bounded retry
-(resilience patterns — bounded, with escalation).
+(resilience patterns — bounded, with escalation); defect clustering / "the
+adjacent defect" (Beizer, *Software Testing Techniques*) — defects group, so a
+found one warrants sweeping its neighbors.

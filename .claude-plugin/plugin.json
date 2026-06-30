@@ -1,7 +1,7 @@
 {
   "name": "loop-orchestrator",
   "description": "Orchestrate one natural-language goal into parallel tmux Claude Code sessions — decompose, plan, implement, verify, and merge through a methodology-grounded loop (TDD / PDCA / Reflexion). Gated where it matters: task-split approval and pre-merge review.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": {
     "name": "choiyounggi",
     "url": "https://github.com/choiyounggi"
