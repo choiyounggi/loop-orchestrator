@@ -35,6 +35,17 @@ else just states a goal. Example mapping to the Atlassian MCP:
               "when": "user gives a parent issue key/URL; children become tasks" } }
 ```
 
+**Partial resume (one child already done).** A child counts as *completed* if the
+user names it, or — when intake exposes status — its tracker status is Done.
+orchestrate (Phase 0) drops completed children from the task set (no session), but
+seeds the dependency graph with their **base outputs**, so any task that depends on
+one still gets its exact signature injected (Phase 3 step 0). Never drop a completed
+child silently — a dependent would lose its premise and re-create it. `setup-
+worktrees.sh` is idempotent, so a branch/worktree the user already made is detected
+and kept. To declare a completed child, give its **key + the exact signature it
+exposed + where it's merged** (or let orchestrate read the signature from the
+integration branch); see the README "이슈트래커 진입" section for a copy-paste prompt.
+
 ## A role is a tool, not a loop (the nesting guard)
 
 A role plugs a **tool or information source into one step** of the verification

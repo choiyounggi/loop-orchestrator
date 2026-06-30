@@ -45,6 +45,16 @@ Two ways the work-list arrives:
 - **`intake` unset, or a free-text goal** → the natural-language path (default):
   decompose the goal yourself in Phase 2.
 
+**Already-done children (partial resume):** treat a child as *completed* if the user
+says so (by key) or — when intake exposes status — its tracker status is Done. A
+completed child is **not** decomposed into a task (no session/worktree), but it is
+**not silently dropped** either: record what it produced as a **base output** — the
+exact exposed signature (function/type/component/endpoint). Any task that depends on
+it then still gets that contract injected (Phase 2/3). If the user names a completed
+key without the signature, read it from the integration branch / its merged code
+rather than re-creating it. This is how "one sub-issue already done, do the rest"
+works safely.
+
 Either way, ask the user — one question at a time — until goal / scope / constraints
 / done criteria are clear enough to decompose. Don't start until they are.
 
@@ -58,8 +68,11 @@ Either way, ask the user — one question at a time — until goal / scope / con
 
 ## Phase 2 — Decompose
 Get the task set: use the `intake` children as candidate tasks if Phase 0 read an
-issue, otherwise split the goal into independent tasks yourself. Then, the same way
-for both: for each task extract **affected files**, **outputs** (what it newly
+issue, otherwise split the goal into independent tasks yourself. **Drop the
+completed children (Phase 0) from the task set** — but seed the dependency graph
+with their base outputs (already-satisfied), so their dependents still resolve and
+get the signature injected, while no session is spawned for them. Then, the same way
+for both, for each *remaining* task extract **affected files**, **outputs** (what it newly
 creates — component/schema/endpoint/type), and **consumes** (another task's output
 it depends on). Build a conflict/dependency matrix from those and topologically sort
 into Waves (`conflict-matrix.md`): a dependency edge `A → B` means B consumes A's
@@ -77,11 +90,12 @@ user's approval** before launching anything.
 the previous Wave is fully approved; `<N>` below = the *current* Wave's task count.
 Single-Wave splits run everyone in parallel (the original behavior).
 
-0. **Preceding-interface injection (Wave 2+):** before launching this Wave, fill each
-   task's brief `<dependencies>` with the **exact signatures** the approved preceding
-   Wave exposed (function/type/component — the real signature, not a paraphrase). This
-   is the contract the downstream session plans against; loose text invites drift.
-   Wave 1 skips this.
+0. **Preceding-interface injection (Wave 2+, and completed base outputs):** before
+   launching this Wave, fill each task's brief `<dependencies>` with the **exact
+   signatures** of (a) the approved preceding Wave and (b) any completed (partial-
+   resume) child it depends on — the real signature, not a paraphrase. This is the
+   contract the downstream session plans against; loose text invites drift. Wave 1
+   with no completed dependencies skips this.
 1. `scripts/setup-worktrees.sh <integ> <root> <base> <branch>...` then verify with
    `git worktree list`.
 2. Per task: write `briefs/<task>.md` (templates/brief.md) — fill `<tools_guidance>`
@@ -123,6 +137,10 @@ On re-invocation with no context, measure real state first: `git worktree list`,
 each `.orchestration/status/*.json` phase, and which `briefs/plans/reviews/`
 artifacts exist. Resume from the earliest incomplete step (idempotently skip done
 steps). Check `tmux ls`; relaunch dead sessions and re-inject the right prompt.
+`setup-worktrees.sh` is idempotent (existing branches/worktrees are detected and
+kept), so re-running it is safe. Note the difference from **partial resume** (Phase
+0): that handles work done *outside* this orchestration — children with no
+`.orchestration` record — whereas re-entry resumes this orchestration's own state.
 
 ## Guardrails
 - You never implement — sessions do; you analyze, plan, review, manage.
@@ -134,3 +152,5 @@ steps). Check `tmux ls`; relaunch dead sessions and re-inject the right prompt.
   status files) — never trust echo logs (set -e is fail-open in eval subshells).
 - Bundled agent only: `test-quality-auditor`. Don't depend on built-in agent names
   (general-purpose/Explore/Plan are version-dependent).
+- A completed/excluded issue (partial resume) is injected as a **base output**, never
+  silently dropped — otherwise its dependents lose their premise and re-create it.
