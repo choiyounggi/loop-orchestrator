@@ -17,7 +17,8 @@ complete it here. It also works standalone for a single task.
 ## Tool profile (pluggable)
 A few steps can use environment-specific tools through named **capability roles**:
 `knowledge` (domain facts / policy / code values), `tacit` (past incidents, edge
-cases, danger zones), and `plan` (a planning skill). Resolve them once at the start:
+cases, danger zones), `plan` (a planning skill), `verify` (the project's test /
+build / QA command), and `explore` (code/symbol search). Resolve them once at the start:
 
 ```
 sh ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-tools.sh --summary
@@ -29,13 +30,19 @@ analysis / the step-2 planning). Configuration is optional and layered (per-user
 then per-repo) — with nothing set, the loop runs fully generic and depends on no
 external tool. Schema, precedence, and examples: `references/tool-profile.md`.
 
+A role is a tool injected into one step — never a loop. Do NOT map a role (esp.
+`verify`) to a tool that runs its own implement/verify/retry loop or another
+orchestrator; that nests loops and muddies the retry/DoD/auditor ownership. There
+is no `implement` role — step 4 below is the single owner of the implement cycle.
+
 ## The loop
 
 ```
 0. Define done       — write the acceptance criteria + done checklist FIRST,
                         so the loop has an explicit pass/fail target.        [DoD/XP]
 1. Analyze           — understand the change; list the test scenarios it needs.
-                        Consult the `knowledge` + `tacit` roles if configured.   [TDD step 1 / PDCA Plan]
+                        Consult `knowledge` + `tacit` if configured; use `explore`
+                        to locate code/symbols.                                  [TDD step 1 / PDCA Plan]
 2. Plan / design     — for larger tasks only; fold into step 1 if small.
                         Use the `plan` role if configured, else plan inline.     [PDCA Plan]
 3. Write tests (Red) — write the failing test(s) BEFORE the code. The test is
@@ -43,7 +50,8 @@ external tool. Schema, precedence, and examples: `references/tool-profile.md`.
                         impractical (e.g. exploratory UI), fix the acceptance
                         criteria / verification command before implementing.    [TDD test-first]
 4. Implement (Green) — minimal code to make the tests pass.                     [TDD Green / PDCA Do]
-5. Run tests (Check) — run new + existing tests; preserve failure output.       [PDCA Check / self-testing code]
+5. Run tests (Check) — run new + existing tests; preserve failure output. Use the
+                        `verify` role's command if configured (run only).        [PDCA Check / self-testing code]
 6. Self-review + refactor — clean up; check bugs, edge cases, resource leaks,
                         input validation, unused code. Re-check against the
                         `tacit` role's danger zones if configured.               [TDD Refactor / self-review / Self-Refine]

@@ -13,9 +13,28 @@ the generic built-in behavior. Nothing breaks when nothing is configured.
 | `knowledge` | domain facts, business policy, code/status values | loop-implement step 1 (Analyze); orchestrate Phase 0/2 |
 | `tacit`     | past incidents, edge cases, coupling/danger zones | loop-implement step 1 (Analyze) + step 6 (Self-review) |
 | `plan`      | producing a non-trivial implementation plan       | loop-implement step 2 (Plan); orchestrate decomposition |
+| `verify`    | running the project's tests / build / QA checks   | loop-implement step 5 (Run); orchestrate Phase 5 (integration) |
+| `explore`   | locating code, symbols, call sites (read-only)    | loop-implement step 1 (Analyze) |
 
 Roles are optional and extensible — you may add custom keys; the resolver passes
 them through, and a skill uses a role only if it knows that role by name.
+
+## A role is a tool, not a loop (the nesting guard)
+
+A role plugs a **tool or information source into one step** of the verification
+loop — it never replaces the loop. Do **not** map a role to a tool that runs its
+own implement / verify / retry loop, or to another orchestrator (e.g. an
+"implement-loop" skill). loop-implement already *is* the implementation loop;
+nesting a second loop inside it makes the retry count, the Definition-of-Done
+judgment, and the test-quality auditor gate ambiguous about which loop owns them,
+and tends to drag in an environment-specific tool's own assumptions.
+
+- `plan` is allowed because it **produces a plan and returns** — it does not
+  implement or iterate.
+- `verify` must **run tests and report** — not run a test-*and-fix* loop. A QA
+  tool that auto-fixes belongs outside, not as a role.
+- There is intentionally **no `implement` role**. Implementation is the loop's
+  own step 4; that is the single owner of the implement/retry cycle.
 
 ## Config files & precedence
 

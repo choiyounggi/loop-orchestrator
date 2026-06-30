@@ -17,11 +17,14 @@ orchestrator→session via `tmux send-keys` one-liners (templates/session-prompt
 Resolve the pluggable tool profile once up front:
 `sh ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-tools.sh --summary`. It maps capability
 roles — `knowledge` (domain/policy), `tacit` (incidents/danger zones), `plan`
-(planning skill) — to whatever tools this installation has, or to generic defaults
-when unset (optional, layered per-user then per-repo; see `references/tool-profile.md`).
-Use `knowledge`/`tacit` yourself during Clarify/Decompose, and write each task's
+(planning skill), `verify` (test/build/QA command), `explore` (code search) — to
+whatever tools this installation has, or to generic defaults when unset (optional,
+layered per-user then per-repo; see `references/tool-profile.md`). Use
+`knowledge`/`tacit` yourself during Clarify/Decompose, and write each task's
 resolved roles into its `<tools_guidance>` brief so worker sessions inherit them
-even if they can't re-read the config.
+even if they can't re-read the config. A role is a tool injected into one step,
+never a loop: do not map a role to an implement/verify-loop tool or another
+orchestrator (that nests loops); there is no `implement` role.
 
 ## Preflight
 Run `${CLAUDE_PLUGIN_ROOT}/hooks/preflight.sh` to resolve git/tmux/jq paths and
@@ -73,8 +76,9 @@ On shortfall, write `reviews/<task>-rN.md`, inject §3 (rework), repeat. After 3
 failed rounds, escalate.
 
 ## Phase 5 — Integration test loop (max 3)
-Merge-preview onto the integration branch and run the integration tests. On failure,
-route back to the responsible session as rework. Repeat until green.
+Merge-preview onto the integration branch and run the integration tests (use the
+`verify` role's command if configured). On failure, route back to the responsible
+session as rework. Repeat until green.
 
 ## 🚦 Gate 2 — pre-merge review (REQUIRED)
 Show the full integration diff (`git diff`). **Wait for the user's confirmation.**

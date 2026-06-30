@@ -16,6 +16,15 @@ setup() {
   [ "$(printf '%s' "$output" | jq -r '.knowledge.kind')" = "default" ]
   [ "$(printf '%s' "$output" | jq -r '.tacit.kind')"     = "default" ]
   [ "$(printf '%s' "$output" | jq -r '.plan.kind')"      = "default" ]
+  [ "$(printf '%s' "$output" | jq -r '.verify.kind')"    = "default" ]
+  [ "$(printf '%s' "$output" | jq -r '.explore.kind')"   = "default" ]
+}
+
+@test "verify role is configurable like the others" {
+  printf '{"verify":{"kind":"cli","ref":"pnpm test"}}' > "$PROJ_CFG"
+  run bash "$RT" --role verify
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s' "$output" | jq -r '.ref')" = "pnpm test" ]
 }
 
 @test "home config: a configured role is used" {

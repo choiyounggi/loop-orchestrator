@@ -68,9 +68,13 @@ Claude Code 대화에서 자연어로 요청하세요:
 
 | 역할 | 용도 | 안 꽂으면 (기본) |
 |------|------|------------------|
-| `knowledge` | 도메인 사실·정책·코드값 | 일반 분석 (강제 조회 없음) |
-| `tacit` | 과거 사고·엣지케이스·danger zone | skip |
-| `plan` | 비단순 작업 계획 수립 | loop-implement 내장 step 2 |
+| `knowledge` | 도메인 사실·정책·코드값 (step1) | 일반 분석 (강제 조회 없음) |
+| `tacit` | 과거 사고·엣지케이스·danger zone (step1·6) | skip |
+| `plan` | 비단순 작업 계획 수립 (step2) | loop-implement 내장 step 2 |
+| `verify` | 테스트/빌드/QA 실행 명령 (step5) | 일반 테스트 실행 |
+| `explore` | 코드·심볼 탐색, read-only (step1) | Grep/Read |
+
+> **역할 = 루프가 아니라 도구.** 한 step에 *주입*되는 도구/정보원이어야 하며, **자체 implement/verify/재시도 루프를 가진 도구나 다른 오케스트레이터(구현루프류)를 역할로 꽂지 마세요** — loop-implement 자체가 구현 루프라 중첩되면 재시도·완료판정·auditor 게이트의 주인이 모호해집니다. `plan`은 계획을 *만들어 반환*만 하므로 안전하고, `implement` 역할은 의도적으로 두지 않았습니다(구현은 루프의 step 4가 단일 소유).
 
 설정 파일은 `git config`처럼 **레이어드**로 합쳐집니다 (낮은 → 높은 우선순위):
 

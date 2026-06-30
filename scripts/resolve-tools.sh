@@ -4,10 +4,14 @@
 #
 #   built-in defaults  <  ~/.claude/loop-orchestrator/tools.json  <  <repo>/.loop-orchestrator/tools.json
 #
-# Each capability role (knowledge / tacit / plan, plus any custom role) is merged
-# independently and field-wise, so a project file can override one role — or just
-# one field of a role — and inherit everything else. To drop an inherited value,
-# set that field to null.
+# Each capability role (knowledge / tacit / plan / verify / explore, plus any
+# custom role) is merged independently and field-wise, so a project file can
+# override one role — or just one field of a role — and inherit everything else.
+# To drop an inherited value, set that field to null.
+#
+# A role is a tool or information source injected into ONE loop step — never a
+# loop itself. Do not map a role to a tool that runs its own implement/verify/
+# retry loop or another orchestrator (that nests loops); see references/tool-profile.md.
 #
 # usage:
 #   resolve-tools.sh             # print the resolved profile as JSON (default)
@@ -26,9 +30,11 @@ JQ=$(command -v jq) || { echo "resolve-tools: jq not found" >&2; exit 127; }
 # Built-in defaults: every role unset → kind "default" (use loop-implement's own
 # generic behavior). Keeps the plugin fully functional with zero config.
 DEFAULTS='{
-  "knowledge": {"kind":"default","when":"domain facts, policy, code/status values"},
-  "tacit":     {"kind":"default","when":"past incidents, edge cases, danger zones"},
-  "plan":      {"kind":"default","when":"planning a non-trivial task"}
+  "knowledge": {"kind":"default","when":"domain facts, policy, code/status values (step 1)"},
+  "tacit":     {"kind":"default","when":"past incidents, edge cases, danger zones (step 1/6)"},
+  "plan":      {"kind":"default","when":"planning a non-trivial task (step 2)"},
+  "verify":    {"kind":"default","when":"running tests / build / QA checks (step 5)"},
+  "explore":   {"kind":"default","when":"locating code, symbols, call sites (step 1)"}
 }'
 
 home_cfg="${LOOP_ORCH_CONFIG_HOME:-$HOME/.claude/loop-orchestrator/tools.json}"
